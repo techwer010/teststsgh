@@ -1,276 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>My Restaurant</title>
+  <title>QR Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; margin:0; background:#f8f9fb; }
-    header { background:linear-gradient(135deg,#ff5722,#ff8a50); color:white; padding:20px; text-align:center; font-size:26px; font-weight:bold; }
-    .container { padding:20px; max-width:900px; margin:auto; }
-
-    .item {
-      background:white;
-      margin-bottom:20px;
-      padding:15px;
-      border-radius:15px;
-      display:flex;
-      gap:15px;
-      box-shadow:0 4px 12px rgba(0,0,0,0.08);
-      transition:0.2s;
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f5f5f5;
     }
 
-    .item:hover { transform:translateY(-3px); }
-
-    .item img {
-      width:110px;
-      height:110px;
-      border-radius:12px;
-      object-fit:cover;
+    h2 {
+      margin-top: 20px;
     }
 
-    .item-details { flex:1; }
-
-    .item h4 { margin:0 0 5px; }
-    .item p { margin:3px 0; color:#555; }
-
-    .price { font-weight:bold; margin-top:5px; }
-
-    .add-btn {
-      margin-top:8px;
-      background:#ff5722;
-      color:white;
-      border:none;
-      padding:8px 12px;
-      border-radius:8px;
-      cursor:pointer;
+    #reader {
+      width: 300px;
+      margin: auto;
+      margin-top: 30px;
     }
-
-    .add-btn:hover { background:#e64a19; }
-
-    #cart {
-      background:white;
-      padding:20px;
-      border-radius:15px;
-      margin-top:25px;
-      box-shadow:0 4px 12px rgba(0,0,0,0.08);
-    }
-
-    #cart h3 { margin-top:0; }
-
-    li {
-      margin-bottom:10px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-
-    .qty button {
-      background:#ddd;
-      border:none;
-      padding:5px 10px;
-      border-radius:6px;
-      cursor:pointer;
-    }
-
-    .qty span { padding:0 8px; }
-
-    input {
-      width:100%;
-      padding:12px;
-      margin:6px 0;
-      border-radius:8px;
-      border:1px solid #ddd;
-      font-size:14px;
-    }
-
-    .order-btn {
-      width:100%;
-      margin-top:10px;
-      background:#25D366;
-      color:white;
-      border:none;
-      padding:14px;
-      border-radius:10px;
-      font-size:16px;
-      cursor:pointer;
-    }
-
-    .order-btn:hover { background:#1ebe5d; }
-
-    .total {
-      font-size:18px;
-      margin-top:10px;
-    }
-
   </style>
 </head>
+
 <body>
 
-<header>🍔 My Restaurant</header>
+<h2>📷 Scan QR Code</h2>
 
-<div class="container">
-
-  <div id="menu"></div>
-
-  <div id="cart">
-    <h3>🛒 Your Cart</h3>
-    <ul id="cart-items"></ul>
-    <p class="total"><strong>Total: ₹<span id="total">0</span></strong></p>
-
-    <h4>Customer Details</h4>
-    <input type="text" id="name" placeholder="Your Name">
-    <input type="text" id="address" placeholder="Delivery Address">
-    <button onclick="useMyLocation()" style="margin-bottom:10px;background:#2196F3;color:white;">📍 Use My Location</button>
-    <input type="text" id="phone" placeholder="Phone Number">
-
-    <button class="order-btn" onclick="placeOrder()">Send Order on WhatsApp</button>
-  </div>
-
-</div>
+<div id="reader"></div>
 
 <script>
-const YOUR_WHATSAPP_NUMBER = "918839349992";
-
-const menu = [
-  {
-    name: "Burger",
-    price: 120,
-    desc: "Juicy grilled burger",
-    img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd"
-  },
-  {
-    name: "Pizza",
-    price: 250,
-    desc: "Cheesy delight pizza",
-    img: "https://images.unsplash.com/photo-1548365328-5b849b0a0c5d"
-  },
-  {
-    name: "Pasta",
-    price: 180,
-    desc: "Creamy white sauce pasta",
-    img: "https://images.unsplash.com/photo-1589307004391-4e5c02b49f7b"
-  }
-];
-
-let cart = [];
-
-function renderMenu() {
-  const menuDiv = document.getElementById("menu");
-  menuDiv.innerHTML = "";
-  menu.forEach((item, index) => {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <img src="${item.img}" />
-      <div class="item-details">
-        <h4>${item.name}</h4>
-        <p>${item.desc}</p>
-        <p class="price">₹${item.price}</p>
-        <button class="add-btn" onclick="addToCart(${index})">Add</button>
-      </div>
-    `;
-    menuDiv.appendChild(div);
-  });
+function onScanSuccess(decodedText) {
+  // Open scanned link
+  window.location.href = decodedText;
 }
 
-function addToCart(index) {
-  const existing = cart.find(i => i.name === menu[index].name);
-  if (existing) existing.qty++;
-  else cart.push({ ...menu[index], qty: 1 });
-  renderCart();
-}
+const scanner = new Html5QrcodeScanner("reader", {
+  fps: 10,
+  qrbox: 250
+});
 
-function changeQty(index, delta) {
-  cart[index].qty += delta;
-  if (cart[index].qty <= 0) cart.splice(index,1);
-  renderCart();
-}
-
-function renderCart() {
-  const cartItems = document.getElementById("cart-items");
-  const totalSpan = document.getElementById("total");
-
-  cartItems.innerHTML = "";
-  let total = 0;
-
-  cart.forEach((item, i) => {
-    total += item.price * item.qty;
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <div>
-        ${item.name} x${item.qty}<br>
-        <small>₹${item.price} each</small>
-      </div>
-      <div class="qty">
-        <button onclick="changeQty(${i}, -1)">-</button>
-        <span>${item.qty}</span>
-        <button onclick="changeQty(${i}, 1)">+</button>
-      </div>
-    `;
-    cartItems.appendChild(li);
-  });
-
-  totalSpan.textContent = total;
-}
-
-function placeOrder() {
-  const name = document.getElementById("name").value;
-  const address = document.getElementById("address").value;
-  const phone = document.getElementById("phone").value;
-
-  if (!name || !address || !phone || cart.length === 0) {
-    alert("Please fill all details and add items");
-    return;
-  }
-
-  let message = `🍔 *New Order*\n\n`;
-  const mapsLink = `https://www.google.com/maps?q=${encodeURIComponent(address)}`;
-
-  message += `👤 Name: ${name}
-📞 Phone: ${phone}
-📍 Address: ${address}
-🗺️ Maps: ${mapsLink}
-
-`;
-  message += `🛒 *Items:*\n`;
-
-  let total = 0;
-  cart.forEach((item) => {
-    message += `- ${item.name} x${item.qty} (₹${item.price})\n`;
-    total += item.price * item.qty;
-  });
-
-  message += `\n💰 *Total: ₹${total}*`;
-
-  const url = `https://wa.me/${YOUR_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-  window.open(url, "_blank");
-
-  cart = [];
-  renderCart();
-}
-
-function useMyLocation() {
-  if (!navigator.geolocation) {
-    alert("Geolocation not supported");
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(async (position) => {
-    const lat = position.coords.latitude;
-    const lng = position.coords.longitude;
-
-    const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
-
-    document.getElementById("address").value = `${lat}, ${lng}`;
-
-    alert("Location captured! It will be sent as Google Maps link.");
-  }, () => {
-    alert("Unable to fetch location");
-  });
-}
-
-renderMenu();
+scanner.render(onScanSuccess);
 </script>
-
+</body>
+</html>
 </body>
 </html>
